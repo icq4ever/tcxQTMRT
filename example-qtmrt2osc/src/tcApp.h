@@ -23,6 +23,10 @@ public:
 
     tcx::QTMRT qtm;
     tcx::OscSender osc;
+    EasyCam cam;
+
+    void drawScene();    // 3D rigid-body gizmos + name labels
+    void drawGUI();
 
     void connectQtm();   // (re)start the QTM connection from qtmHost/qtmPort
     void applyOsc();     // (re)point the OSC sender at oscHost/oscPort

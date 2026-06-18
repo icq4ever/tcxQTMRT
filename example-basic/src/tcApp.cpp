@@ -39,7 +39,12 @@ void tcApp::draw() {
     for (size_t i = 0; i < qtm.getNumUnlabeledMarker(); i++)
         drawBox(qtm.getUnlabeledMarker(i), 15);
 
-    // 6DOF rigid bodies — draw local axes from the matrix basis columns
+    // 6DOF rigid bodies — draw local axes from the matrix basis columns.
+    // Collect name labels in screen space (worldToScreen needs the camera
+    // matrices, which cam.end() resets) and draw them in the 2D overlay below.
+    struct Label { Vec3 screen; string text; };
+    vector<Label> labels;
+
     for (size_t i = 0; i < qtm.getNumRigidBody(); i++) {
         const auto& rb = qtm.getRigidBodyAt(i);
         if (!rb.isActive()) continue;
@@ -51,12 +56,24 @@ void tcApp::draw() {
         Vec3 az(M.m[2], M.m[6], M.m[10]);
         float len = 120.0f;
 
-        setColor(1.0f, 0.2f, 0.2f); drawLine(o, o + ax * len);
-        setColor(0.2f, 1.0f, 0.2f); drawLine(o, o + ay * len);
-        setColor(0.2f, 0.4f, 1.0f); drawLine(o, o + az * len);
+        setColor(1.0f, 0.2f, 0.2f); drawLine(o, o + ax * len);  // X
+        setColor(0.2f, 1.0f, 0.2f); drawLine(o, o + ay * len);  // Y
+        setColor(0.2f, 0.4f, 1.0f); drawLine(o, o + az * len);  // Z
+
+        // project the origin to screen for a floating label (skip if behind camera)
+        Vec3 s = worldToScreen(o);
+        if (s.z > 0.0f && s.z < 1.0f) {
+            string name = rb.name.empty() ? ("rb " + to_string(i)) : rb.name;
+            labels.push_back({s, name});
+        }
     }
 
     cam.end();
+
+    // rigid-body name labels (2D, drawn after the camera so they face the screen)
+    setColor(1.0f, 0.9f, 0.4f);
+    for (const auto& l : labels)
+        drawBitmapString(l.text, l.screen.x + 6, l.screen.y - 6);
 
     // 2D overlay
     string info;
