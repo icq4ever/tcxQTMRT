@@ -1,0 +1,21 @@
+{
+  "buildPresets": [
+    {
+      "configurePreset": "linux",
+      "jobs": 4,
+      "name": "linux"
+    }
+  ],
+  "configurePresets": [
+    {
+      "binaryDir": "${sourceDir}/build-linux",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "displayName": "Linux",
+      "generator": "Unix Makefiles",
+      "name": "linux"
+    }
+  ],
+  "version": 6
+}

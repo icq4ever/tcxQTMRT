@@ -1,0 +1,16 @@
+{
+  "description": "Qualisys QTM Real-Time (RT) protocol receiver — 6DOF rigid bodies + 3D markers",
+  "author": "icq4ever",
+  "license": "MIT",
+  "category": "hardware",
+  "keywords": [
+    "qualisys",
+    "qtm",
+    "mocap",
+    "motion capture",
+    "optical tracking",
+    "6dof",
+    "rigid body"
+  ],
+  "platforms": ["linux", "macos", "windows"]
+}
