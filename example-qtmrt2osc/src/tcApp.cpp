@@ -4,8 +4,20 @@
 void tcApp::setup() {
     setWindowTitle("tcxQTMRT - qtmrt2osc bridge");
 
-    qtm.setup("127.0.0.1");       // QTM server ip
-    osc.setup(oscHost, oscPort);  // OSC destination
+    imguiSetup();
+
+    connectQtm();   // QTM server
+    applyOsc();     // OSC destination
+}
+
+void tcApp::connectQtm() {
+    qtm.close();
+    qtm.setup(qtmHost, (unsigned short)qtmPort);
+}
+
+void tcApp::applyOsc() {
+    osc.setup(oscHost, oscPort);
+    lastSentFrame = -1;   // force a resend on the next frame
 }
 
 void tcApp::update() {
@@ -32,15 +44,44 @@ void tcApp::update() {
 void tcApp::draw() {
     clear(0.07f, 0.07f, 0.09f);
 
-    string info;
-    info += "QTM -> OSC bridge (tcxFSportsMocap format)\n\n";
-    info += string("QTM connected: ") + (qtm.isConnected() ? "YES" : "NO") + "\n";
-    info += "QTM frame: " + to_string(qtm.getFrameNumber()) + "\n";
-    info += "rigid bodies: " + to_string(qtm.getNumRigidBody()) + "\n\n";
-    info += "OSC dest: " + oscHost + ":" + to_string(oscPort) + "\n";
-    info += "  /rigidbody/<name>/{location3d,orientation,eye3d,...}\n";
-    info += "bodies forwarded: " + to_string(sentMessages) + "\n";
+    imguiBegin();
 
-    setColor(1.0f);
-    drawBitmapString(info, 20, 20);
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(340, 0), ImGuiCond_FirstUseEver);
+    ImGui::Begin("QTM -> OSC bridge");
+
+    // ---- QTM source ----
+    ImGui::SeparatorText("QTM server");
+    ImGui::InputText("host##qtm", qtmHost, sizeof(qtmHost));
+    ImGui::InputInt("RT base port", &qtmPort);
+    if (ImGui::Button("Connect / Reconnect")) {
+        connectQtm();
+    }
+    ImGui::SameLine();
+    bool connected = qtm.isConnected();
+    ImGui::TextColored(connected ? ImVec4(0.4f, 0.9f, 0.4f, 1.0f)
+                                 : ImVec4(0.9f, 0.4f, 0.4f, 1.0f),
+                       connected ? "connected" : "disconnected");
+
+    ImGui::Spacing();
+
+    // ---- OSC destination ----
+    ImGui::SeparatorText("OSC destination");
+    ImGui::InputText("host##osc", oscHost, sizeof(oscHost));
+    ImGui::InputInt("port", &oscPort);
+    if (ImGui::Button("Apply OSC dest")) {
+        applyOsc();
+    }
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("Status");
+    ImGui::Text("QTM frame: %d", qtm.getFrameNumber());
+    ImGui::Text("rigid bodies: %d", (int)qtm.getNumRigidBody());
+    ImGui::Text("bodies forwarded: %d", sentMessages);
+    ImGui::TextDisabled("format: tcxFSportsMocap");
+    ImGui::TextDisabled("/rigidbody/<name>/{location3d,orientation,...}");
+
+    ImGui::End();
+
+    imguiEnd();
 }
