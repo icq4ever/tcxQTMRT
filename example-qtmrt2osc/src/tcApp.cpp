@@ -77,17 +77,19 @@ void tcApp::update() {
 void tcApp::drawScene() {
     cam.begin();
 
-    // ground axes
-    setColor(0.4f);
-    drawLine(Vec3(0, 0, 0), Vec3(500, 0, 0));
-    drawLine(Vec3(0, 0, 0), Vec3(0, 500, 0));
-    drawLine(Vec3(0, 0, 0), Vec3(0, 0, 500));
-
-    // 6DOF rigid bodies — local-axis gizmos + screen-space name labels.
-    // worldToScreen needs the camera matrices, which cam.end() resets, so
-    // collect label positions here and draw the text after cam.end().
-    struct Label { Vec3 screen; string text; };
+    // Labels are screen-space, so collect them here (camera still active for
+    // worldToScreen) and draw after cam.end(). Each carries its own colour.
+    struct Label { Vec3 screen; string text; float r, g, b; };
     vector<Label> labels;
+
+    // world origin axes — colour-coded X=red, Y=green, Z=blue, with end labels
+    const float axisLen = 500.0f;
+    setColor(1.0f, 0.2f, 0.2f); drawLine(Vec3(0, 0, 0), Vec3(axisLen, 0, 0));  // X
+    setColor(0.2f, 1.0f, 0.2f); drawLine(Vec3(0, 0, 0), Vec3(0, axisLen, 0));  // Y
+    setColor(0.2f, 0.4f, 1.0f); drawLine(Vec3(0, 0, 0), Vec3(0, 0, axisLen));  // Z
+    labels.push_back({worldToScreen(Vec3(axisLen, 0, 0)), "X", 1.0f, 0.3f, 0.3f});
+    labels.push_back({worldToScreen(Vec3(0, axisLen, 0)), "Y", 0.3f, 1.0f, 0.3f});
+    labels.push_back({worldToScreen(Vec3(0, 0, axisLen)), "Z", 0.4f, 0.6f, 1.0f});
 
     for (size_t i = 0; i < qtm.getNumRigidBody(); i++) {
         const auto& rb = qtm.getRigidBodyAt(i);
@@ -107,16 +109,19 @@ void tcApp::drawScene() {
         Vec3 s = worldToScreen(o);
         if (s.z > 0.0f && s.z < 1.0f) {
             string name = rb.name.empty() ? ("rb " + to_string(i)) : rb.name;
-            labels.push_back({s, name});
+            labels.push_back({s, name, 1.0f, 0.9f, 0.4f});
         }
     }
 
     cam.end();
 
-    // rigid-body name labels (2D, drawn after the camera so they face the screen)
-    setColor(1.0f, 0.9f, 0.4f);
-    for (const auto& l : labels)
+    // labels (2D, drawn after the camera so they face the screen);
+    // colour-coded per entry: axis end-caps X/Y/Z and rigid-body names
+    for (const auto& l : labels) {
+        if (l.screen.z <= 0.0f || l.screen.z >= 1.0f) continue;  // behind camera
+        setColor(l.r, l.g, l.b);
         drawBitmapString(l.text, l.screen.x + 6, l.screen.y - 6);
+    }
 }
 
 void tcApp::draw() {
