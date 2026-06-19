@@ -31,6 +31,12 @@ public:
     void connectQtm();   // (re)start the QTM connection from qtmHost/qtmPort
     void applyOsc();     // (re)point the OSC sender at oscHost/oscPort
 
+    void loadSettings(); // restore host/port from disk (called in setup)
+    void saveSettings(); // persist host/port to disk (auto-called on edit)
+
+    // Persisted next to the app's data dir; getDataPath resolves it.
+    static constexpr const char* kSettingsPath = "qtmrt2osc-settings.json";
+
     // Editable settings (ImGui buffers).
     char qtmHost[64] = "127.0.0.1";
     int  qtmPort = 22222;          // QTM RT base port

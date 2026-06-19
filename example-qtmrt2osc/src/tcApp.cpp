@@ -12,18 +12,45 @@ void tcApp::setup() {
     cam.setElevation(20);
     cam.enableMouseInput();
 
+    loadSettings(); // restore last-used host/port before connecting
+
     connectQtm();   // QTM server
     applyOsc();     // OSC destination
+}
+
+void tcApp::loadSettings() {
+    if (!fileExists(kSettingsPath)) return;
+
+    Json j = loadJson(kSettingsPath);
+    if (j.is_null()) return;
+
+    string qh = j.value("qtmHost", string(qtmHost));
+    string oh = j.value("oscHost", string(oscHost));
+    snprintf(qtmHost, sizeof(qtmHost), "%s", qh.c_str());
+    snprintf(oscHost, sizeof(oscHost), "%s", oh.c_str());
+    qtmPort = j.value("qtmPort", qtmPort);
+    oscPort = j.value("oscPort", oscPort);
+}
+
+void tcApp::saveSettings() {
+    Json j;
+    j["qtmHost"] = qtmHost;
+    j["qtmPort"] = qtmPort;
+    j["oscHost"] = oscHost;
+    j["oscPort"] = oscPort;
+    saveJson(j, kSettingsPath);
 }
 
 void tcApp::connectQtm() {
     qtm.close();
     qtm.setup(qtmHost, (unsigned short)qtmPort);
+    saveSettings();   // persist the host/port we just applied
 }
 
 void tcApp::applyOsc() {
     osc.setup(oscHost, oscPort);
     lastSentFrame = -1;   // force a resend on the next frame
+    saveSettings();   // persist the host/port we just applied
 }
 
 void tcApp::update() {
@@ -107,6 +134,8 @@ void tcApp::drawGUI() {
     ImGui::Begin("QTM -> OSC bridge");
 
     // ---- QTM source ----
+    // Edited host/port are persisted when applied via the buttons below
+    // (connectQtm / applyOsc call saveSettings).
     ImGui::SeparatorText("QTM server");
     ImGui::InputText("host##qtm", qtmHost, sizeof(qtmHost));
     ImGui::InputInt("RT base port", &qtmPort);
