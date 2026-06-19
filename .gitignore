@@ -1,6 +1,8 @@
 # Build artifacts
 **/build*/
 cmake-build-*/
+# Regenerated per-machine by trusscli (absolute toolchain paths)
+**/CMakePresets.json
 **/bin/*
 !**/bin/data/
 *.o
